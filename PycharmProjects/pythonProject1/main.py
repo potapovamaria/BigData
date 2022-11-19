@@ -55,10 +55,6 @@ def create_application() -> Flask:
                 cache.set("df_new", df)
                 cache.set("flag", True)
             df = cache.get("df_new")
-            df['Date'] = pd.to_datetime(df['PAY_DATE'], format='%Y-%m-%d')
-            df = df.sort_values(by='Date')
-            df = df.set_index(pd.DatetimeIndex(df['Date']))
-            df = df.drop(['Date', 'PAY_DATE'], axis=1)
             weekDay = analytics.most_payment_day_of_week(df)
             return json.dumps(weekDay.tolist())
 
@@ -71,12 +67,23 @@ def create_application() -> Flask:
                 cache.set("df_new", df)
                 cache.set("flag", True)
             df = cache.get("df_new")
-            df['Date'] = pd.to_datetime(df['PAY_DATE'], format='%Y-%m-%d')
-            df = df.sort_values(by='Date')
-            df = df.set_index(pd.DatetimeIndex(df['Date']))
-            df = df.drop(['Date', 'PAY_DATE'], axis=1)
             day = analytics.most_payment_day(df)
             return json.dumps(day.tolist())
+
+    @app.route("/getDecomposition", methods=["GET"])
+    @cross_origin()
+    def get_decomposition():
+        if request.method == 'GET':
+            if cache.get("flag") == False:
+                df = make_data()
+                cache.set("df_new", df)
+                cache.set("flag", True)
+            df = cache.get("df_new")
+
+            trend, seasonal, resid = analytics.decomposition(df)
+            data = {'trend': trend, 'seasonal': seasonal, 'resid': resid}
+            json_data = json.dumps(data)
+            return json_data
     return app
 
 if __name__== "__main__":
