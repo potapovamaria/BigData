@@ -19,6 +19,16 @@ from lssvr import *
 def mape(y_true, y_pred):
     y_true, y_pred = np.array(y_true), np.array(y_pred)
     return np.mean(np.abs((y_true - y_pred) / y_true)) * 100
+def plot_prediction(df, prediction, START_DATE, PRED_COLUMN):
+    plt.figure(figsize=(25, 12)) # создание фигуры 25 на 12
+    plt.plot(df.index[df.index>=START_DATE], prediction, label="prediction", alpha=.7) # строим график x - даты(начиная со стартовой даты), y - предсказания, имя графика - prediction, alpha - коэффициент, отвечающий за прозрачность графика
+    plt.plot(df.index[df.index>=START_DATE], df.loc[df.index>=START_DATE, PRED_COLUMN], label="real", alpha=.7) # строим график x - даты(начиная со стартовой даты), y - , имя графика - prediction, alpha - коэффициент, отвечающий за прозрачность графика
+
+    plt.scatter(df.index[df.index>=START_DATE], prediction, label="prediction", alpha=.7)
+    plt.scatter(df.index[df.index>=START_DATE], df.loc[df.index>=START_DATE, PRED_COLUMN], label="real", alpha=.7)
+    plt.legend()
+    plt.title(PRED_COLUMN + " Prediction")
+    plt.show()
 
 def XGBoostModel(train_x, train_y):
     model = xgboost.XGBRegressor(booster='gblinear', learning_rate=0.2111, random_state=42, n_estimators=197)
@@ -126,11 +136,12 @@ def get_picks(dff, START_DATE, INPUT_LEN, PRED_LEN):
 
     temp_pick = df_scal_pick[-PRED_LEN:]
     temp_pick.PAY = y_pred_lsc_pick
-    prediction_lsc_pick = pd.DataFrame(scaler_pick.inverse_transform(temp_pick), columns=df_scal_pick.columns) * 1000
+    prediction_lsc_pick = pd.DataFrame(scaler_pick.inverse_transform(temp_pick), columns=df_scal_pick.columns)
 
     return prediction_lsc_pick, df_peak
 
-def get_answer(num_model, df, date_1, date_2, pick_check):
+def get_answer(num_model, dff, date_1, date_2, pick_check):
+    df = dff.copy()
     df['Date'] = pd.to_datetime(df['PAY_DATE'], format='%Y-%m-%d')
     df = df.sort_values(by='Date')
     df = df.set_index(pd.DatetimeIndex(df['Date']))
@@ -139,12 +150,10 @@ def get_answer(num_model, df, date_1, date_2, pick_check):
     LAST_REAL = df.index[-1]
     date_1 = pd.to_datetime(date_1, format='%d.%m.%Y')
     date_2 = pd.to_datetime(date_2, format='%d.%m.%Y')
-
     START_DATE = date_1
     END_DATE = date_2
     PRED_LEN = (LAST_REAL - START_DATE).days + 1
     INPUT_LEN = 180
-
     scaler = MinMaxScaler()
     df_scal = scaler.fit_transform(df)
     df_scal = pd.DataFrame(df_scal, columns=df.columns)
@@ -183,7 +192,7 @@ def get_answer(num_model, df, date_1, date_2, pick_check):
             temp = df_scal[-PRED_LEN:]
             temp.PAY = y_pred
             prediction_lssvr = pd.DataFrame(scaler.inverse_transform(temp), columns=df_scal.columns)
-            prediction_lssvr["PAY"] = prediction_lssvr["PAY"] * 1000
+            prediction_lssvr["PAY"] = prediction_lssvr["PAY"]
 
             indexes = pd.DatetimeIndex(df.index[-PRED_LEN:])
             indexes = indexes.strftime('%d.%m.%Y')
@@ -220,7 +229,7 @@ def get_answer(num_model, df, date_1, date_2, pick_check):
             temp = df_scal[:PRED_LEN_NEW]
             temp.PAY = y_pred
             prediction_lssvr_new = pd.DataFrame(scaler.inverse_transform(temp), columns=df_scal.columns)
-            prediction_lssvr_new["PAY"] = prediction_lssvr_new["PAY"] * 1000
+            prediction_lssvr_new["PAY"] = prediction_lssvr_new["PAY"]
 
             start_date = LAST_REAL + datetime.timedelta(days=1)
             end_date = END_DATE
@@ -258,7 +267,7 @@ def get_answer(num_model, df, date_1, date_2, pick_check):
                 temp.PAY = y_pred
                 prediction_lssvr = pd.DataFrame(scaler.inverse_transform(temp), columns=df_scal.columns)
 
-                prediction_lssvr["PAY"] = prediction_lssvr["PAY"] * 1000
+                prediction_lssvr["PAY"] = prediction_lssvr["PAY"]
 
                 indexes = pd.DatetimeIndex(df.index[-N - 1:-N_END])
                 indexes = indexes.strftime('%d.%m.%Y')
@@ -268,7 +277,7 @@ def get_answer(num_model, df, date_1, date_2, pick_check):
                 temp.PAY = y_pred
                 prediction_lssvr = pd.DataFrame(scaler.inverse_transform(temp), columns=df_scal.columns)
 
-                prediction_lssvr["PAY"] = prediction_lssvr["PAY"] * 1000
+                prediction_lssvr["PAY"] = prediction_lssvr["PAY"]
 
                 indexes = pd.DatetimeIndex(df.index[-N - 1:])
                 indexes = indexes.strftime('%d.%m.%Y')
@@ -308,7 +317,7 @@ def get_answer(num_model, df, date_1, date_2, pick_check):
             temp = df_scal[-PRED_LEN_NEW:]
             temp.PAY = y_pred
             prediction_lssvr = pd.DataFrame(scaler.inverse_transform(temp), columns=df_scal.columns)
-            prediction_lssvr["PAY"] = prediction_lssvr["PAY"] * 1000
+            prediction_lssvr["PAY"] = prediction_lssvr["PAY"]
 
             start_date = LAST_REAL + datetime.timedelta(days=1)
             end_date = END_DATE
@@ -345,7 +354,7 @@ def get_answer(num_model, df, date_1, date_2, pick_check):
             temp = df_scal[-N:]
             temp.PAY = y_pred
             prediction_lssvr = pd.DataFrame(scaler.inverse_transform(temp), columns=df_scal.columns)
-            prediction_lssvr["PAY"] = prediction_lssvr["PAY"] * 1000
+            prediction_lssvr["PAY"] = prediction_lssvr["PAY"]
 
             start_date = LAST_REAL + datetime.timedelta(days=1)
             end_date = END_DATE
@@ -371,7 +380,10 @@ if __name__ == '__main__':
     # print(y_pred)
     df = preprocessing_data.preprocessing()
     df = df.toPandas()
-    data = get_answer(1, df, '01.11.2016', '24.11.2016', 1)
+    data = get_answer(1, df, '01.11.2022', '01.07.2023', 1)
+    plt.figure(figsize=(25, 12))  # создание фигуры 25 на 12
+    plt.plot(data.index, data.PAY, label="prediction", alpha=.7) # строим график x - даты(начиная со стартовой даты), y - предсказания, имя графика - prediction, alpha - коэффициент, отвечающий за прозрачность графика
+    plt.show()
     # data = {'trend' : trend, 'seasonal' : seasonal, 'resid' : resid}
     # json_data = json.dumps(data)
     print(data)

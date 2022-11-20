@@ -1,3 +1,4 @@
+from datetime import datetime
 from pathlib import Path
 import json
 import pandas as pd
@@ -11,10 +12,12 @@ from flask import Flask, Response, jsonify, request, redirect, url_for, flash
 import pandas as pd
 from common import cache
 
+
 def make_data():
     df = preprocessing_data.preprocessing()
     df = df.toPandas()
     return df
+
 
 def get_df():
     my_value = cache.get("df_new")
@@ -31,6 +34,7 @@ def get_df():
     df = jsonify(df)
     return df
 
+
 def create_application() -> Flask:
     app = Flask(__name__)
     cache.init_app(app=app, config={"CACHE_TYPE": "filesystem", 'CACHE_DIR': Path('/tmp')})
@@ -38,6 +42,7 @@ def create_application() -> Flask:
     cors = CORS(app)
     app.config['CORS_HEADERS'] = 'Content-Type'
     app.config['JSON_SORT_KEYS'] = False
+
     @app.route("/getdata", methods=["GET"])
     @cross_origin()
     def get_data():
@@ -111,33 +116,65 @@ def create_application() -> Flask:
                 cache.set("df_new", df, timeout=0)
                 cache.set("flag", True)
             df = cache.get("df_new")
-            start_date = request.form.get('start_date')
-            end_date = request.form.get('end_date')
-            model_num = request.form.get("model_num")
+            start_date = request.json.get('start_date')
+            end_date = request.json.get('end_date')
+            model_num = request.json.get("model_num")
             model_num = int(model_num)
-            pick_check = request.form.get('enter_pick')
+            pick_check = request.json.get('enter_pick')
             pick_check = int(pick_check)
             y_pred = prediction.get_answer(model_num, df, start_date, end_date, pick_check)
             y_pred = y_pred.to_dict()
-            y_pred = y_pred['PAY']
-            return jsonify(y_pred)
+            y_pred = jsonify(y_pred)
+            return y_pred
+
+    @app.route("/getdatapred", methods=["POST"])
+    @cross_origin()
+    def get_orig_data():
+        if request.method == 'POST':
+            if cache.get("flag") == False:
+                df = make_data()
+                cache.set("df_new", df, timeout=0)
+                cache.set("flag", True)
+            start_date = request.json.get('start_date')
+            end_date = request.json.get('end_date')
+            df = cache.get("df_new")
+            df['Date'] = pd.to_datetime(df['PAY_DATE'], format='%Y-%m-%d')
+            df = df.sort_values(by='Date')
+            df = df.set_index(pd.DatetimeIndex(df['Date']))
+            df = df.drop(['Date', 'PAY_DATE'], axis=1)
+
+            data = df[df.index >= start_date].copy()
+            data = data[data.index <= end_date]
+            if len(data) == 0:
+                return "No data"
+            else:
+                res = pd.date_range(
+                    data.index[0],
+                    data.index.to_list()[-1]
+                )
+                indexes = pd.DatetimeIndex(res)
+                indexes = indexes.strftime('%d.%m.%Y')
+                data = data.set_index(indexes)
+                data = data.to_dict()
+                data = jsonify(data)
+                return data
 
     return app
 
-if __name__== "__main__":
+
+if __name__ == "__main__":
     app = create_application()
     app.run(host="localhost", port=5000, debug=True)
 # if __name__ == '__main__':
 #     df = preprocessing_data.preprocessing()
-    # df = df.toPandas()
-    # df['Date'] = pd.to_datetime(df['PAY_DATE'], format='%Y-%m-%d')
-    # df = df.sort_values(by='Date')
-    # df = df.set_index(pd.DatetimeIndex(df['Date']))
-    # # df.index = df.index.dt.strftime('%d.%m.%y')
-    # df = df.drop(['Date', 'PAY_DATE'], axis=1)
-    # analytics.visualisation(df)
-    # analytics.most_payment_day_of_week(df)
-    # analytics.most_payment_day(df)
-    # analytics.decomposition(df)
-    # analytics.check_stationarity(df)
-
+# df = df.toPandas()
+# df['Date'] = pd.to_datetime(df['PAY_DATE'], format='%Y-%m-%d')
+# df = df.sort_values(by='Date')
+# df = df.set_index(pd.DatetimeIndex(df['Date']))
+# # df.index = df.index.dt.strftime('%d.%m.%y')
+# df = df.drop(['Date', 'PAY_DATE'], axis=1)
+# analytics.visualisation(df)
+# analytics.most_payment_day_of_week(df)
+# analytics.most_payment_day(df)
+# analytics.decomposition(df)
+# analytics.check_stationarity(df)
