@@ -27,7 +27,7 @@ def init_data():
     #      d = row.to_dict()
     #      collection.insert_one(d)
 
-    item_details = collection.find().skip(3000).limit(100)
+    item_details = collection.find()
 
     items_df = DataFrame(item_details)
     # items_df = items_df.set_index(pd.DatetimeIndex(items_df['Date']))

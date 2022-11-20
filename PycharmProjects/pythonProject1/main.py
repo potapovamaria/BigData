@@ -1,6 +1,8 @@
 from pathlib import Path
 import json
 import pandas as pd
+
+import prediction
 import preprocessing_data
 import analytics
 import os
@@ -42,7 +44,7 @@ def create_application() -> Flask:
         if request.method == 'GET':
             if cache.get("flag") == False:
                 df = make_data()
-                cache.set("df_new", df)
+                cache.set("df_new", df, timeout=0)
                 cache.set("flag", True)
             return get_df()
 
@@ -52,11 +54,11 @@ def create_application() -> Flask:
         if request.method == 'GET':
             if cache.get("flag") == False:
                 df = make_data()
-                cache.set("df_new", df)
+                cache.set("df_new", df, timeout=0)
                 cache.set("flag", True)
             df = cache.get("df_new")
             weekDay = analytics.most_payment_day_of_week(df)
-            return json.dumps(weekDay.tolist())
+            return json.dumps(weekDay)
 
     @app.route("/getDay", methods=["GET"])
     @cross_origin()
@@ -64,11 +66,11 @@ def create_application() -> Flask:
         if request.method == 'GET':
             if cache.get("flag") == False:
                 df = make_data()
-                cache.set("df_new", df)
+                cache.set("df_new", df, timeout=0)
                 cache.set("flag", True)
             df = cache.get("df_new")
             day = analytics.most_payment_day(df)
-            return json.dumps(day.tolist())
+            return json.dumps(day)
 
     @app.route("/getDecomposition", methods=["GET"])
     @cross_origin()
@@ -76,7 +78,7 @@ def create_application() -> Flask:
         if request.method == 'GET':
             if cache.get("flag") == False:
                 df = make_data()
-                cache.set("df_new", df)
+                cache.set("df_new", df, timeout=0)
                 cache.set("flag", True)
             df = cache.get("df_new")
 
@@ -84,6 +86,42 @@ def create_application() -> Flask:
             data = {'trend': trend, 'seasonal': seasonal, 'resid': resid}
             json_data = json.dumps(data)
             return json_data
+
+    @app.route("/getPrice", methods=["GET"])
+    @cross_origin()
+    def get_new_price():
+        if request.method == 'GET':
+            if cache.get("flag") == False:
+                df = make_data()
+                cache.set("df_new", df, timeout=0)
+                cache.set("flag", True)
+            df = cache.get("df_new")
+            data = analytics.get_price(df)
+            data.index = data.index.strftime('%d.%m.%Y')
+            data = data.to_dict()
+            data = jsonify(data)
+            return data
+
+    @app.route("/prediction/payment", methods=["POST"])
+    @cross_origin()
+    def payment_prediction():
+        if request.method == 'POST':
+            if cache.get("flag") == False:
+                df = make_data()
+                cache.set("df_new", df, timeout=0)
+                cache.set("flag", True)
+            df = cache.get("df_new")
+            start_date = request.form.get('start_date')
+            end_date = request.form.get('end_date')
+            model_num = request.form.get("model_num")
+            model_num = int(model_num)
+            pick_check = request.form.get('enter_pick')
+            pick_check = int(pick_check)
+            y_pred = prediction.get_answer(model_num, df, start_date, end_date, pick_check)
+            y_pred = y_pred.to_dict()
+            y_pred = y_pred['PAY']
+            return jsonify(y_pred)
+
     return app
 
 if __name__== "__main__":

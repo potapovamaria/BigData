@@ -1,3 +1,4 @@
+from datetime import datetime, date, timedelta
 import json
 
 import pandas as pd
@@ -28,7 +29,16 @@ def most_payment_day_of_week(df):
     dff['Year'] = dff.index.year
     dff['WeekDay'] = dff.index.day_of_week
     idx = dff.groupby(['Month', 'Year'])['PAY'].transform(max) == dff['PAY']
-    return df[idx].WeekDay.values
+    values = df[idx].WeekDay.values
+    values_new = []
+    for i in range(7):
+        count = 0
+        for j in range(len(values)):
+            if values[j] == i:
+                count += 1
+        values_new.append(count)
+
+    return values_new
     # fig = px.histogram(df[idx].WeekDay.values)
     # fig.show()
 
@@ -44,7 +54,16 @@ def most_payment_day(df):
     dff['Year'] = dff.index.year
     dff['WeekDay'] = dff.index.day_of_week
     idx = dff.groupby(['Month', 'Year'])['PAY'].transform(max) == dff['PAY']
-    return df[idx].Day.values
+    values = df[idx].Day.values
+    values_new = []
+    for i in range(31):
+        count = 0
+        for j in range(len(values)):
+            if values[j] == i:
+                count += 1
+        values_new.append(count)
+
+    return values_new
 
 def decomposition(df):
     df['Date'] = pd.to_datetime(df['PAY_DATE'], format='%Y-%m-%d')
@@ -53,16 +72,16 @@ def decomposition(df):
     df = df.drop(['Date', 'PAY_DATE'], axis=1)
     decomposition = seasonal_decompose(df.PAY, model='multiplicative')
 
-    trend = decomposition.trend[~decomposition.trend.isnull()]
+    trend = decomposition.trend[~decomposition.trend.isnull()][-200:]
     trend.index = trend.index.strftime('%d.%m.%Y')
     # trend = json.dumps(trend.to_dict())
     trend = trend.to_dict()
-    seasonal = decomposition.seasonal[~decomposition.seasonal.isnull()][:100]
+    seasonal = decomposition.seasonal[~decomposition.seasonal.isnull()][-200:]
 
     seasonal.index = seasonal.index.strftime('%d.%m.%Y')
     # seasonal = json.dumps(seasonal.to_dict())
     seasonal = seasonal.to_dict()
-    resid = decomposition.resid[~decomposition.resid.isnull()]
+    resid = decomposition.resid[~decomposition.resid.isnull()][-200:]
 
     resid.index = resid.index.strftime('%d.%m.%Y')
     resid = resid.to_dict()
@@ -89,11 +108,45 @@ def check_stationarity(df):
     else:
         print('Главный ряд стационарен.')
 
+def get_price(df):
+    df['Date'] = pd.to_datetime(df['PAY_DATE'], format='%Y-%m-%d')
+    df = df.sort_values(by='Date')
+    df = df.set_index(pd.DatetimeIndex(df['Date']))
+    df = df.drop(['Date', 'PAY_DATE'], axis=1)
+    dff = df.copy()
+    for i in range(len(dff)):
+        if dff.index[i] >= datetime.strptime("2011-05-01", "%Y-%m-%d") and dff.index[i] < datetime.strptime("2012-07-01", "%Y-%m-%d"):
+            dff['PAY'][i] = dff['PAY'][i] * 3.53 / 2.8
+        if dff.index[i] >= datetime.strptime("2012-07-01", "%Y-%m-%d") and dff.index[i] < datetime.strptime("2013-01-01", "%Y-%m-%d"):
+            dff['PAY'][i] = dff['PAY'][i] * 3.53 / 2.97
+        if dff.index[i] >= datetime.strptime("2013-01-01", "%Y-%m-%d") and dff.index[i] < datetime.strptime("2014-07-01", "%Y-%m-%d"):
+            dff['PAY'][i] = dff['PAY'][i] * 3.53 / 3.39
+        if dff.index[i] >= datetime.strptime("2014-07-01", "%Y-%m-%d") and dff.index[i] < datetime.strptime("2015-07-01", "%Y-%m-%d"):
+            dff['PAY'][i] = dff['PAY'][i] * 3.53 / 3.53
+        if dff.index[i] >= datetime.strptime("2015-07-01", "%Y-%m-%d") and dff.index[i] < datetime.strptime("2016-07-01", "%Y-%m-%d"):
+            dff['PAY'][i] = dff['PAY'][i] * 3.53 / 3.84
+        if dff.index[i] >= datetime.strptime("2016-07-01", "%Y-%m-%d") and dff.index[i] < datetime.strptime("2017-07-01", "%Y-%m-%d"):
+            dff['PAY'][i] = dff['PAY'][i] * 3.53 / 4.12
+        if dff.index[i] >= datetime.strptime("2017-07-01", "%Y-%m-%d") and dff.index[i] < datetime.strptime("2018-07-01", "%Y-%m-%d"):
+            dff['PAY'][i] = dff['PAY'][i] * 3.53 / 4.32
+        if dff.index[i] >= datetime.strptime("2018-07-01", "%Y-%m-%d") and dff.index[i] < datetime.strptime("2019-01-01", "%Y-%m-%d"):
+            dff['PAY'][i] = dff['PAY'][i] * 3.53 / 4.43
+        if dff.index[i] >= datetime.strptime("2019-01-01", "%Y-%m-%d") and dff.index[i] < datetime.strptime("2019-07-01", "%Y-%m-%d"):
+            dff['PAY'][i] = dff['PAY'][i] * 3.53 / 4.61
+        if dff.index[i] >= datetime.strptime("2019-07-01", "%Y-%m-%d") and dff.index[i] < datetime.strptime("2020-07-01", "%Y-%m-%d"):
+            dff['PAY'][i] = dff['PAY'][i] * 3.53 / 4.65
+        if dff.index[i] >= datetime.strptime("2020-07-01", "%Y-%m-%d") and dff.index[i] < datetime.strptime("2021-07-01", "%Y-%m-%d"):
+            dff['PAY'][i] = dff['PAY'][i] * 3.53 / 4.82
+        if dff.index[i] >= datetime.strptime("2021-07-01", "%Y-%m-%d") and dff.index[i] < datetime.strptime("2022-07-01", "%Y-%m-%d"):
+            dff['PAY'][i] = dff['PAY'][i] * 3.53 / 4.98
+
+    return dff
+
 if __name__ == '__main__':
     df = preprocessing_data.preprocessing()
     df = df.toPandas()
-    trend, seasonal, resid = decomposition(df)
-    data = {'trend' : trend, 'seasonal' : seasonal, 'resid' : resid}
-    json_data = json.dumps(data)
-    print(json_data)
+    data = get_price(df)
+    # data = {'trend' : trend, 'seasonal' : seasonal, 'resid' : resid}
+    # json_data = json.dumps(data)
+    print(data)
 
