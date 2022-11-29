@@ -21,17 +21,11 @@ def init_data():
     mongo_client = MongoClient("mongodb://localhost:27017/")
     database = mongo_client['YOUR_DB_NAME']
     collection = database['your_collection']
-    # collection.drop()
-
-    # for index, row in df.iterrows():
-    #      d = row.to_dict()
-    #      collection.insert_one(d)
 
     item_details = collection.find()
 
     items_df = DataFrame(item_details)
-    # items_df = items_df.set_index(pd.DatetimeIndex(items_df['Date']))
-    # items_df = items_df.drop(['Date', '_id'], axis=1)
+
     return items_df
 
 if __name__ == '__main__':

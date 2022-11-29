@@ -3,7 +3,6 @@ import findspark
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col
 import pyspark.sql.functions as fun
-# from pyspark.ml.regression import LinearRegression
 from init_bd import init_data
 os.environ["JAVA_HOME"] = "C:\\Program Files\\Java\\jre1.8.0_351"
 os.environ["SPARK_HOME"] = "C:\\Users\\potap\\PycharmProjects\\spark-3.3.1-bin-hadoop3"
@@ -16,7 +15,7 @@ def preprocessing():
 
     spark = SparkSession.builder \
         .master("local[*]") \
-        .appName("Learning_Spark") \
+        .appName("Service_Spark") \
         .getOrCreate()
 
     df = spark.createDataFrame(data)
