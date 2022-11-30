@@ -1,15 +1,12 @@
-from datetime import datetime, date, timedelta
-import json
+from datetime import datetime
 
 import pandas as pd
-from plotly.subplots import make_subplots
 
 import plotly.graph_objects as go
 from statsmodels.tsa.seasonal import seasonal_decompose
 import statsmodels.api as sm
-import plotly.express as px
 
-import preprocessing_data
+from backend import preprocessing_data
 
 
 def visualisation(df):
@@ -56,7 +53,7 @@ def most_payment_day(df):
     idx = dff.groupby(['Month', 'Year'])['PAY'].transform(max) == dff['PAY']
     values = df[idx].Day.values
     values_new = []
-    for i in range(31):
+    for i in range(1, 31):
         count = 0
         for j in range(len(values)):
             if values[j] == i:

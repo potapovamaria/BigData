@@ -3,7 +3,7 @@ import findspark
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col
 import pyspark.sql.functions as fun
-from init_bd import init_data
+from backend.init_bd import init_data
 os.environ["JAVA_HOME"] = "C:\\Program Files\\Java\\jre1.8.0_351"
 os.environ["SPARK_HOME"] = "C:\\Users\\potap\\PycharmProjects\\spark-3.3.1-bin-hadoop3"
 os.environ["HADOOP_HOME"] = "C:\\Users\\potap\\PycharmProjects\\hadoop-3.0.0"

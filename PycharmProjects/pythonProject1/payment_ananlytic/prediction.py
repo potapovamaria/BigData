@@ -4,12 +4,9 @@ import pandas as pd
 from matplotlib import pyplot as plt
 from sklearn.preprocessing import MinMaxScaler
 import xgboost
-from sklearn.metrics import accuracy_score
-from sklearn.metrics import mean_squared_error, mean_absolute_error
-from statsmodels.tools.eval_measures import rmse
 import warnings
 
-import preprocessing_data
+from backend import preprocessing_data
 
 warnings.filterwarnings("ignore")
 import lightgbm as lgb
@@ -47,11 +44,11 @@ def LSSVRModel(train_x, train_y):
 
 def SVRModel(train_x, train_y):
     clf = svm.SVR(kernel='rbf',
-                  gamma=0.1,
-                  C=0.5,
+                  gamma=0.02,
+                  C=2.32,
                   verbose=False,
                   tol=1e-10,
-                  epsilon=0.0411)
+                  epsilon=0.0094)
     clf.fit(train_x, train_y)
 
     return clf
@@ -174,7 +171,7 @@ def get_answer(num_model, dff, date_1, date_2, pick_check):
         PRED_LEN_NEW = (END_DATE - START_DATE).days + 1
 
     if num_model == 1:
-        model = LSSVRModel(train_x, train_y)
+        model = SVRModel(train_x, train_y)
         if PRED_LEN > 0 and PRED_LEN_NEW > 0:
             test_x_copy = train_x[-PRED_LEN].copy()
 

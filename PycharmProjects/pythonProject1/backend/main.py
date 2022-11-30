@@ -1,16 +1,14 @@
 from datetime import datetime
 from pathlib import Path
 import json
-import pandas as pd
 
-import prediction
+import datetime
 import preprocessing_data
-import analytics
-import os
+from payment_ananlytic import analytics, prediction
 from flask_cors import CORS, cross_origin
-from flask import Flask, Response, jsonify, request, redirect, url_for, flash
+from flask import Flask, jsonify, request
 import pandas as pd
-from common import cache
+from backend.common import cache
 
 
 def make_data():
@@ -43,15 +41,36 @@ def create_application() -> Flask:
     app.config['CORS_HEADERS'] = 'Content-Type'
     app.config['JSON_SORT_KEYS'] = False
 
-    @app.route("/getdata", methods=["GET"])
+    @app.route("/getdata", methods=["POST"])
     @cross_origin()
     def get_data():
-        if request.method == 'GET':
+        if request.method == 'POST':
             if cache.get("flag") == False:
                 df = make_data()
                 cache.set("df_new", df, timeout=0)
                 cache.set("flag", True)
-            return get_df()
+            df = cache.get("df_new")
+            df['Date'] = pd.to_datetime(df['PAY_DATE'], format='%Y-%m-%d')
+            df = df.sort_values(by='Date')
+            df = df.set_index(pd.DatetimeIndex(df['Date']))
+            df = df.drop(['Date', 'PAY_DATE'], axis=1)
+            start_date = request.json.get('start_date')
+            end_date = request.json.get('end_date')
+            data = df[df.index >= start_date].copy()
+            data = data[data.index <= end_date]
+            if len(data) == 0:
+                return "No data"
+            else:
+                res = pd.date_range(
+                    data.index[0],
+                    data.index.to_list()[-1]
+                )
+                indexes = pd.DatetimeIndex(res)
+                indexes = indexes.strftime('%d.%m.%Y')
+                data = data.set_index(indexes)
+                data = data.to_dict()
+                data = jsonify(data)
+                return data
 
     @app.route("/getWeekday", methods=["GET"])
     @cross_origin()
@@ -111,6 +130,7 @@ def create_application() -> Flask:
     @cross_origin()
     def payment_prediction():
         if request.method == 'POST':
+            now = datetime.datetime.now()
             if cache.get("flag") == False:
                 df = make_data()
                 cache.set("df_new", df, timeout=0)
