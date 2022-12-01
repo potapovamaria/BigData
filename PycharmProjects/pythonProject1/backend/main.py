@@ -4,7 +4,8 @@ import json
 
 import datetime
 import preprocessing_data
-from payment_ananlytic import analytics, prediction
+from payment_ananlytic import analytics
+from prediction import prediction
 from flask_cors import CORS, cross_origin
 from flask import Flask, jsonify, request
 import pandas as pd
