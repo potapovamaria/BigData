@@ -1,14 +1,20 @@
+"""
+Preprocessing data Module
+"""
+
 import os
 import findspark
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col
 import pyspark.sql.functions as fun
 from backend.init_bd import init_data
+
 os.environ["JAVA_HOME"] = "C:\\Program Files\\Java\\jre1.8.0_351"
 os.environ["SPARK_HOME"] = "C:\\Users\\potap\\PycharmProjects\\spark-3.3.1-bin-hadoop3"
 os.environ["HADOOP_HOME"] = "C:\\Users\\potap\\PycharmProjects\\hadoop-3.0.0"
 
 def preprocessing():
+    """ Data Preprocessing """
     data = init_data()
     data = data.drop(['_id'], axis=1)
     findspark.init()
@@ -18,10 +24,10 @@ def preprocessing():
         .appName("Service_Spark") \
         .getOrCreate()
 
-    df = spark.createDataFrame(data)
+    data_frame = spark.createDataFrame(data)
 
-    dataset = df.select(col('PAY'),
-                        col('PAY_DATE'))
+    dataset = data_frame.select(col('PAY'),
+                                col('PAY_DATE'))
 
     dataset = dataset.withColumn('PAY', fun.regexp_replace('PAY', ',', '.'))
 
